@@ -33,29 +33,42 @@ class VotingMachine:
             isWrongBulletin = False
 
             for sub_pack in pack_to_open:
+                candidates_in_pack = []
                 for bulletin in sub_pack:
                     decoded_bulletin = self.decode_RSA(bulletin, voter_private_key)
+
+                    # check if candidate is in the list of candidates
+                    candidate_check = decoded_bulletin.decode("utf-8").split("|")[0]
+                    candidates_in_pack.append(candidate_check)
+
+                    # check if bulletin is correct
                     if not self.check_bulletin(decoded_bulletin):
                         isWrongBulletin = True
-            # for vote in pack_to_open:
-            #     bulletin = self.decode_RSA(vote, voter_private_key)
-
-            #     if not self.check_bulletin(bulletin):
-            #         isWrongBulletin = True
+                        return "Wrong bulletin"
+                    
+                if len(candidates_in_pack) != len(self._candidates):
+                    isWrongBulletin = True
+                    return "Wrong bulletin pack"
+                for cand in set(candidates_in_pack):
+                    if candidates_in_pack.count(cand) != 1:
+                        isWrongBulletin = True
+                        return "Wrong bulletin pack"
+                    
 
             if not isWrongBulletin:
                 for sub_pack_to_sign in pack_to_sign:
                     for hiden_bulletin in sub_pack_to_sign:
                         signature = self.sign_bulletin(hiden_bulletin)
-                        # content_with_signature = hiden_bulletin + "||" + signature
                         pack_to_send.append((hiden_bulletin, signature))
                     self.known_IDs.append(voter_ID)
                 return pack_to_send
+            
+        else:
+            return "You have already voted"
 
     
     def vote_consideration(self, voted_bulletin, voter_private_key):
         content, signature = voted_bulletin
-        # content, signature = decoded_bulletin.split("||")
         decoded_bulletin = self.decode_RSA(content, self.__priv_key)
 
         if self.check_signature(decoded_bulletin, signature):
@@ -68,6 +81,12 @@ class VotingMachine:
                     self.voted_IDs.append(voter_ID)
                     self._voting_results[voter_ID] = candidate
                     return True
+                else:
+                    return "You have already voted"
+            else:
+                return "Wrong bulletin"       
+        else:
+            return "Wrong signature of the bulletin"
 
     def get_voting_results(self):
         voting_results_count = {}

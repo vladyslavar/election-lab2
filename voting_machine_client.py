@@ -16,7 +16,7 @@ class VotingMachineClient:
     def get_my_ID(self):
         self.ID = self.ID_provider.get_ID(self.passport)
         if self.ID == None:
-            print("You are not allowed to vote")
+            print("passport: " + self.passport +" You are not allowed to vote")
         else:
             return self.ID
 
@@ -39,7 +39,11 @@ class VotingMachineClient:
             decoded_bulletin = self.decode_pack(bulletin)
             decoded_pack.append((decoded_bulletin, signature))
 
+        # this will be manual action on real voting machine
         number_of_candidate =random.randint(0, len(decoded_pack) - 1)
+        # number_of_candidate = len(decoded_pack) + 1
+        if number_of_candidate >= len(decoded_pack):
+            return "Wrong bulletin"
         chosen_candidate, sign = pack_to_vote[number_of_candidate]
 
         chipher = PKCS1_OAEP.new(self.vm.pub_key)
@@ -66,11 +70,6 @@ class VotingMachineClient:
                 encoded_vote = cipher.encrypt(vote)
                 encoded_sub_pack.append(encoded_vote)
             encoded_pack.append(encoded_sub_pack)
-        # for vote in pack:
-        #     if not isinstance(vote, bytes):
-        #         vote = vote.encode("utf-8")
-        #     encoded_vote = cipher.encrypt(vote)
-        #     encoded_pack.append(encoded_vote)
 
         return encoded_pack
     
